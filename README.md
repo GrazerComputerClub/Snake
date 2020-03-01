@@ -1,5 +1,9 @@
 # GC²'s Snake
 
+![Main](https://github.com/GrazerComputerClub/Snake/blob/master/img/main.png)
+
+![Game](https://github.com/GrazerComputerClub/Snake/blob/master/img/game.png)
+
 This is our Snake implementation based on PyGame and PyGame-Menu.
 
 The general purpose for this implementation is to have a game to easily show
