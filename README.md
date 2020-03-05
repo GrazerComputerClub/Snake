@@ -9,6 +9,14 @@ This is our Snake implementation based on PyGame and PyGame-Menu.
 The general purpose for this implementation is to have a game to easily show
 how to control remote systems with self-build input devices.
 
+## Install & start
+
+sudo apt-get install python-pygame
+python3 -m pip install -U pygame --user
+git clone https://github.com/GrazerComputerClub/Snake.git
+cd Snake
+python3 engine.py
+
 ## Open points
 
 * Multi player
