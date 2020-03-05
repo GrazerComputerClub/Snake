@@ -21,5 +21,5 @@ python3 engine.py
 
 * Multi player
 * Selection of input device
-* Support for GC²'s controller
+* Support for GC²'s controller (Game0-xHAT)
 * ...
