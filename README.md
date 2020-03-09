@@ -17,6 +17,15 @@ git clone https://github.com/GrazerComputerClub/Snake.git
 cd Snake  
 python3 engine.py  
 
+### For Menu
+
+#### Additionally install:
+
+python3 -m pip install -U pygame-menu --user
+
+#### Start:
+python3 menu.py
+
 ## Open points
 
 * Multi player
