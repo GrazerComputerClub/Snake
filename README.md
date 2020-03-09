@@ -24,3 +24,13 @@ python3 menu.py
 * Selection of input device
 * Support for GC²'s controller (Game0-xHAT)
 * ...
+
+## Concept
+
+* Multiplayer support
+** Join as many players as possible on one engine (each player gets a separat set of keys on the keyboard, like old classic split screen gaming)
+** Join remote, so additional players are remote
+* Menu
+** Controls
+** Network
+* Team
