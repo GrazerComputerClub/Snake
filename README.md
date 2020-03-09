@@ -12,19 +12,11 @@ how to control remote systems with self-build input devices.
 ## Install & start
 
 sudo apt-get install python-pygame  
-python3 -m pip install -U pygame --user  
+pip3 install pygame 
+pip3 install pygame-menu
 git clone https://github.com/GrazerComputerClub/Snake.git  
 cd Snake  
-python3 engine.py  
-
-### For Menu
-
-#### Additionally install:
-
-python3 -m pip install -U pygame-menu --user
-
-#### Start:
-python3 menu.py
+python3 menu.py  
 
 ## Open points
 
