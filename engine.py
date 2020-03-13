@@ -20,6 +20,7 @@ FPS = 60
 
 DELAY_FACTOR = 2  # < basically the speed
 PLAYERS = 1
+CONTROLS = None
 
 surface = None
 clock = None
@@ -37,6 +38,26 @@ class Direction(Enum):
     DOWN = 2
     LEFT = 3
     RIGHT = 4
+
+
+class PlayerControls:
+    def __init__(self):
+        self.left = pygame.K_LEFT
+        self.right = pygame.K_RIGHT
+        self.up = pygame.K_UP
+        self.down = pygame.K_DOWN
+
+    def set_left(self, key):
+        self.left = key
+
+    def set_right(self, key):
+        self.right = key
+
+    def set_up(self, key):
+        self.up = key
+
+    def set_down(self, key):
+        self.down = key
 
 
 class Apple:
@@ -308,19 +329,23 @@ def init(c, s):
     clock = c
 
 
-def set_params(speed, players):
+def set_params(speed, players, controls):
     global DELAY_FACTOR
     global PLAYERS
+    global CONTROLS
     assert 0 < speed < 10
     assert 0 < players < 5
     DELAY_FACTOR = 10 - speed
     PLAYERS = players
+    CONTROLS = controls
 
 
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption("Snake v1.0")
     pygame.font.init()
+
+    CONTROLS = [PlayerControls()]
 
     init(pygame.time.Clock(),
          pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.HWSURFACE))

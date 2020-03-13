@@ -17,14 +17,24 @@ COLOR_BLACK = (0, 0, 0)
 COLOR_WHITE = (255, 255, 255)
 COLOR_BACKGROUND = (74, 74, 74)
 FPS = 60.0
+
 MENU_BACKGROUND_COLOR = (37, 133, 47)
+MENU_FONT = pygameMenu.font.FONT_BEBAS
+
 WINDOW_SIZE = (1024, 768)
 PLAYERS = 1
 SPEED = 6
 
+MAX_PLAYERS = 4
+
 clock = None
 main_menu = None
 surface = None
+
+player_controls = []
+for i in range(0, MAX_PLAYERS):
+    player_controls.append(engine.PlayerControls())
+input_ctrl_sel_player = [player_controls[0]]
 
 
 def player_changed(value, num_players):
@@ -52,10 +62,61 @@ def play_function():
     # main_menu as the menu that will check all your input.
     main_menu.disable()
     main_menu.reset(1)
-    engine.set_params(speed=SPEED, players=PLAYERS)
+    engine.set_params(speed=SPEED, players=PLAYERS, controls=player_controls)
     game_engine = engine.Game(menu=main_menu)
     game_engine.game_loop()  # doesn't return until game is over or close is requested
     main_menu.enable()
+
+
+def key_input(msg, on_key_pressed, *args, **kwargs):
+    """
+    Draws an overlay, so that a input key can be retrieved
+    :return: None
+    """
+    global surface
+    global main_menu
+    while True:
+        clock.tick(FPS)
+        main_background()
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                on_key_pressed(event.key, args, kwargs)
+                return
+        # main_menu.mainloop(None, disable_loop=True)  # disable events in menu
+        main_menu._actual.draw()  # has to be used because mainloop flips internally
+        rect_size = (256, 48)
+        frame_size = 6
+        # inner frame
+        pygame.draw.rect(surface, MENU_BACKGROUND_COLOR,
+                         (WINDOW_SIZE[0] / 2 - rect_size[0] / 2,
+                          WINDOW_SIZE[1] / 2 - rect_size[1] / 2,
+                          rect_size[0], rect_size[1]), 0)
+        # outer frame
+        pygame.draw.rect(surface, COLOR_BACKGROUND,
+                         (WINDOW_SIZE[0] / 2 - rect_size[0] / 2,
+                          WINDOW_SIZE[1] / 2 - rect_size[1] / 2,
+                          rect_size[0], rect_size[1]), frame_size)
+        # msg
+        font = pygame.font.Font(MENU_FONT, 30)
+        rendered_msg = font.render(msg, 1, COLOR_BLACK)
+        rendered_msg_size = font.size(msg)
+        surface.blit(rendered_msg,
+                     (WINDOW_SIZE[0] / 2 - rendered_msg_size[0] / 2,
+                      WINDOW_SIZE[1] / 2 - rendered_msg_size[1] / 2))
+
+        pygame.display.flip()
+
+
+def store_key(key, *args, **kwargs):
+    # args[0][0][0] ... 1st and 2nd to access proper element, 3rd because it has to be a ref (which is a list here)
+    getattr(args[0][0][0], args[0][1])(key)
+
+
+def ctrl_player_changed(value, sel_player):
+    input_ctrl_sel_player[0] = player_controls[sel_player]
 
 
 def main_background():
@@ -67,11 +128,11 @@ def main_background():
     surface.fill(COLOR_BACKGROUND)
 
 
-def create_menu(menu_title):
+def create_menu(menu_title, font_size=30):
     return pygameMenu.TextMenu(surface,
                                bgfun=main_background,
                                color_selected=COLOR_WHITE,
-                               font=pygameMenu.font.FONT_BEBAS,
+                               font=MENU_FONT,
                                font_color=COLOR_BLACK,
                                font_size_title=30,
                                font_title=pygameMenu.font.FONT_8BIT,
@@ -82,7 +143,7 @@ def create_menu(menu_title):
                                onclose=pygameMenu.events.DISABLE_CLOSE,
                                option_shadow=False,
                                text_color=COLOR_BLACK,
-                               text_fontsize=20,
+                               font_size=font_size,
                                title=menu_title,
                                window_height=WINDOW_SIZE[1],
                                window_width=WINDOW_SIZE[0]
@@ -103,29 +164,33 @@ def main():
     clock = pygame.time.Clock()
 
     setting_menu = create_menu('Settings')
-    setting_menu.add_selector('Players: ',
-                              [('1', 1),
-                               ('2', 2),
-                               ('3', 3),
-                               ('4', 4)
-                               ],
+    player_select = []
+    for p in range(1, MAX_PLAYERS + 1):
+        player_select.append((str(p), p))
+    setting_menu.add_selector('Players: ', player_select,
                               selector_id='players',
                               default=0,
                               onchange=player_changed)
-    setting_menu.add_selector('Speed: ',
-                              [('1', 1),
-                               ('2', 2),
-                               ('3', 3),
-                               ('4', 4),
-                               ('5', 5),
-                               ('6', 6),
-                               ('7', 7),
-                               ('8', 8),
-                               ('9', 9)
-                               ],
+    speed_select = []
+    for p in range(1, 10):
+        speed_select.append((str(p), p))
+    setting_menu.add_selector('Speed: ', speed_select,
                               selector_id='speed',
                               default=5,
                               onchange=speed_changed)
+
+    ctrl_menu = create_menu('Controls')
+    ctrl_menu.add_selector('Select player: ', player_select,
+                           selector_id='players',
+                           default=0,
+                           onchange=ctrl_player_changed)
+    ctrl_menu.add_option("Left", key_input, 'Press a key...', store_key, input_ctrl_sel_player, 'set_left')
+    ctrl_menu.add_option("Right", key_input, 'Press a key...', store_key, input_ctrl_sel_player, 'set_right')
+    ctrl_menu.add_option("Up", key_input, 'Press a key...', store_key, input_ctrl_sel_player, 'set_up')
+    ctrl_menu.add_option("Down", key_input, 'Press a key...', store_key, input_ctrl_sel_player, 'set_down')
+    ctrl_menu.add_option('Back', pygameMenu.events.BACK)
+    setting_menu.add_option('Controls', ctrl_menu)
+
     setting_menu.add_option('Return to main', pygameMenu.events.BACK)
     about_menu = create_menu('About')
     for m in ABOUT:
@@ -149,7 +214,7 @@ def main():
         for event in events:
             if event.type == pygame.QUIT:
                 exit()
-        main_menu.mainloop(events)
+        main_menu.mainloop(events, disable_loop=True)
         pygame.display.flip()
 
 
