@@ -5,6 +5,8 @@ import pygame
 import pygameMenu
 
 import engine
+from config import GAME_CFG
+from config import GAME_ENV
 
 # -----------------------------------------------------------------------------
 # Constants and global variables
@@ -27,9 +29,7 @@ SPEED = 6
 
 MAX_PLAYERS = 4
 
-clock = None
 main_menu = None
-surface = None
 
 player_controls = []
 for i in range(0, MAX_PLAYERS):
@@ -53,7 +53,6 @@ def play_function():
     :return: None
     """
     global main_menu
-    global clock
     global PLAYERS
     global SPEED
     print('Game starts for {0} players'.format(PLAYERS))
@@ -73,10 +72,9 @@ def key_input(msg, on_key_pressed, *args, **kwargs):
     Draws an overlay, so that a input key can be retrieved
     :return: None
     """
-    global surface
     global main_menu
     while True:
-        clock.tick(FPS)
+        GAME_ENV.clock.tick(FPS)
         main_background()
         events = pygame.event.get()
         for event in events:
@@ -90,12 +88,12 @@ def key_input(msg, on_key_pressed, *args, **kwargs):
         rect_size = (256, 48)
         frame_size = 6
         # inner frame
-        pygame.draw.rect(surface, MENU_BACKGROUND_COLOR,
+        pygame.draw.rect(GAME_ENV.surface, MENU_BACKGROUND_COLOR,
                          (WINDOW_SIZE[0] / 2 - rect_size[0] / 2,
                           WINDOW_SIZE[1] / 2 - rect_size[1] / 2,
                           rect_size[0], rect_size[1]), 0)
         # outer frame
-        pygame.draw.rect(surface, COLOR_BACKGROUND,
+        pygame.draw.rect(GAME_ENV.surface, COLOR_BACKGROUND,
                          (WINDOW_SIZE[0] / 2 - rect_size[0] / 2,
                           WINDOW_SIZE[1] / 2 - rect_size[1] / 2,
                           rect_size[0], rect_size[1]), frame_size)
@@ -103,9 +101,9 @@ def key_input(msg, on_key_pressed, *args, **kwargs):
         font = pygame.font.Font(MENU_FONT, 30)
         rendered_msg = font.render(msg, 1, COLOR_BLACK)
         rendered_msg_size = font.size(msg)
-        surface.blit(rendered_msg,
-                     (WINDOW_SIZE[0] / 2 - rendered_msg_size[0] / 2,
-                      WINDOW_SIZE[1] / 2 - rendered_msg_size[1] / 2))
+        GAME_ENV.surface.blit(rendered_msg,
+                              (WINDOW_SIZE[0] / 2 - rendered_msg_size[0] / 2,
+                               WINDOW_SIZE[1] / 2 - rendered_msg_size[1] / 2))
 
         pygame.display.flip()
 
@@ -124,12 +122,11 @@ def main_background():
     Function used by menus, draw on background while menu is active.
     :return: None
     """
-    global surface
-    surface.fill(COLOR_BACKGROUND)
+    GAME_ENV.surface.fill(COLOR_BACKGROUND)
 
 
 def create_menu(menu_title, font_size=30):
-    return pygameMenu.TextMenu(surface,
+    return pygameMenu.TextMenu(GAME_ENV.surface,
                                bgfun=main_background,
                                color_selected=COLOR_WHITE,
                                font=MENU_FONT,
@@ -151,17 +148,15 @@ def create_menu(menu_title, font_size=30):
 
 
 def main():
-    global clock
     global main_menu
-    global surface
 
     pygame.init()
     pygame.display.set_caption("GC2 Snake v1.0")
     pygame.font.init()
     os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-    surface = pygame.display.set_mode(WINDOW_SIZE)
-    clock = pygame.time.Clock()
+    GAME_ENV.clock = pygame.time.Clock()
+    GAME_ENV.surface = pygame.display.set_mode((GAME_CFG.SCREEN_WIDTH, GAME_CFG.SCREEN_HEIGHT), pygame.HWSURFACE)
 
     setting_menu = create_menu('Settings')
     player_select = []
@@ -205,10 +200,9 @@ def main():
     main_menu.add_option('Quit', pygameMenu.events.EXIT)
 
     main_menu.set_fps(FPS)
-    engine.init(clock, surface)
 
     while True:
-        clock.tick(FPS)
+        GAME_ENV.clock.tick(FPS)
         main_background()
         events = pygame.event.get()
         for event in events:
