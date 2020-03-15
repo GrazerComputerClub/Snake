@@ -1,9 +1,33 @@
 from enum import Enum
 
+import pygame
+
+
+class PlayerControls:
+    def __init__(self):
+        self.left = pygame.K_LEFT
+        self.right = pygame.K_RIGHT
+        self.up = pygame.K_UP
+        self.down = pygame.K_DOWN
+
+    def set_left(self, key):
+        self.left = key
+
+    def set_right(self, key):
+        self.right = key
+
+    def set_up(self, key):
+        self.up = key
+
+    def set_down(self, key):
+        self.down = key
+
 
 class PlayerConfiguration:
     def __init__(self):
-        pass
+        self.NUM_PLAYERS = 1
+        self.CONTROLS = [PlayerControls()]
+        self.SNAKE_START_LEN = 5
 
 
 class GameConfiguration:
@@ -32,8 +56,9 @@ class PyGameEnv:
     def __init__(self):
         self.surface = None
         self.clock = None
+        self.main_menu = None
 
 
-player_config = PlayerConfiguration()
+PLAYER_CFG = PlayerConfiguration()
 GAME_CFG = GameConfiguration()
 GAME_ENV = PyGameEnv()

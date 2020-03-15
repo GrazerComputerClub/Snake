@@ -24,14 +24,24 @@ class Snake:
                               GAME_CFG.SNAKE_SIZE, GAME_CFG.SNAKE_SIZE), 0)
             pass
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, start_len):
         """
         :param x: x-coord of the upper left corner of the surface's segment
         :param y: y-coord of the upper left corner of the surface's segment
         """
+        self.alive = True
         self.direction = Direction.UP
         self.stack = []
         self.stack.append(self.Segment(x, y, "yellow"))  # add head
+        for snake_starting_segments in range(start_len):
+            self.grow()
+
+    def is_alive(self):
+        return self.alive
+
+    def update_alive(self):
+        if self.collides_with_body():
+            self.alive = False
 
     def update(self):
         """

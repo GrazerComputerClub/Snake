@@ -8,32 +8,14 @@ from collision import collides
 from config import Direction
 from config import GAME_CFG
 from config import GAME_ENV
+from config import PLAYER_CFG
 from snake import Snake
 
 random.seed()
 
-PLAYERS = 1
-CONTROLS = None
 
-
-class PlayerControls:
-    def __init__(self):
-        self.left = pygame.K_LEFT
-        self.right = pygame.K_RIGHT
-        self.up = pygame.K_UP
-        self.down = pygame.K_DOWN
-
-    def set_left(self, key):
-        self.left = key
-
-    def set_right(self, key):
-        self.right = key
-
-    def set_up(self, key):
-        self.up = key
-
-    def set_down(self, key):
-        self.down = key
+def get_random_coord(max_coord):
+    return int(random.randint(0, max_coord) / GAME_CFG.FIELD_SIZE) * GAME_CFG.FIELD_SIZE
 
 
 class Apple:
@@ -53,14 +35,11 @@ class Apple:
 
     @staticmethod
     def get_new():
-        new_x = random.randint(0, GAME_CFG.SCREEN_WIDTH)
-        new_y = random.randint(0, GAME_CFG.SCREEN_HEIGHT)
-        return Apple(int(new_x / GAME_CFG.FIELD_SIZE) * GAME_CFG.FIELD_SIZE,
-                     int(new_y / GAME_CFG.FIELD_SIZE) * GAME_CFG.FIELD_SIZE)
+        return Apple(get_random_coord(GAME_CFG.SCREEN_WIDTH), get_random_coord(GAME_CFG.SCREEN_HEIGHT))
 
 
 class Game:
-    def __init__(self, menu=None):
+    def __init__(self):
         self.start_time = pygame.time.get_ticks()
         self.score_font = pygame.font.Font(None, 38)
         self.score_numb_font = pygame.font.Font(None, 28)
@@ -70,25 +49,55 @@ class Game:
         self.score_msg_size = self.score_font.size("Score")
         self.background_color = pygame.Color(74, 74, 74)
         self.speed_counter = 0
-        self.main_menu = menu
         self.__init_game_params()
 
     def __init_game_params(self):
         self.score = 0
         self.apples = []
-        self.snake = Snake(GAME_CFG.SCREEN_WIDTH / 2, GAME_CFG.SCREEN_HEIGHT / 2)
-        for snake_starting_segments in range(5):
-            self.snake.grow()
+        self.snakes = []
+        self.__create_snakes()
         while len(self.apples) < GAME_CFG.NUM_APPLES:
             self.__insert_new_apple()
         self.is_game_over = False
+
+    def __create_snakes(self):
+        snake_rect = []
+        snake_radius = PLAYER_CFG.SNAKE_START_LEN * GAME_CFG.FIELD_SIZE
+        for s in range(0, PLAYER_CFG.NUM_PLAYERS):
+            tries_before_reduce_distance = 10
+            while True:
+                tries_before_reduce_distance = tries_before_reduce_distance - 1
+                if tries_before_reduce_distance == 0:
+                    tries_before_reduce_distance = 10
+                    snake_radius = snake_radius - GAME_CFG.FIELD_SIZE
+                    if snake_radius <= 0:
+                        snake_radius = 1  # minimum distance to avoid that snake's head will be placed on the same field
+                snake_head_pos = (get_random_coord(GAME_CFG.SCREEN_WIDTH), get_random_coord(GAME_CFG.SCREEN_HEIGHT))
+                snake_start_area = pygame.Rect(snake_head_pos[0] - snake_radius,
+                                               snake_head_pos[1] - snake_radius,
+                                               snake_head_pos[0] + snake_radius,
+                                               snake_head_pos[1] + snake_radius)
+                snake_collides = False
+                for placed_snake_pos in snake_rect:
+                    if snake_start_area.colliderect(placed_snake_pos):
+                        snake_collides = True
+                        break
+                if not snake_collides:
+                    snake_rect.append(snake_start_area)
+                    self.snakes.append(Snake(snake_head_pos[0], snake_head_pos[1], PLAYER_CFG.SNAKE_START_LEN))
+                    break
 
     def __insert_new_apple(self):
         new_apple = Apple.get_new()
         for a in self.apples:
             if collides(a, new_apple):
                 return False
-        if not self.snake.collides(new_apple):
+        no_snake_field = True
+        for snake in self.snakes:
+            if snake.collides(new_apple):
+                no_snake_field = False
+                break
+        if no_snake_field:
             self.apples.append(new_apple)
             return True
         return False
@@ -107,53 +116,66 @@ class Game:
     def __process_event_loop(self):
         result = True
         events = pygame.event.get()
-        new_direction = self.snake.direction
+        new_directions = []
+        for s in self.snakes:
+            new_directions.append(s.direction)
         for e in events:
             if e.type == pygame.KEYDOWN:
-                if e.key == pygame.K_UP:
-                    new_direction = Direction.UP
-                elif e.key == pygame.K_DOWN:
-                    new_direction = Direction.DOWN
-                elif e.key == pygame.K_LEFT:
-                    new_direction = Direction.LEFT
-                elif e.key == pygame.K_RIGHT:
-                    new_direction = Direction.RIGHT
-                elif e.key == pygame.K_y and self.is_game_over:
+                for player_idx in range(PLAYER_CFG.NUM_PLAYERS):
+                    if e.key == PLAYER_CFG.CONTROLS[player_idx].up:
+                        new_directions[player_idx] = Direction.UP
+                    elif e.key == PLAYER_CFG.CONTROLS[player_idx].down:
+                        new_directions[player_idx] = Direction.DOWN
+                    elif e.key == PLAYER_CFG.CONTROLS[player_idx].left:
+                        new_directions[player_idx] = Direction.LEFT
+                    elif e.key == PLAYER_CFG.CONTROLS[player_idx].right:
+                        new_directions[player_idx] = Direction.RIGHT
+                if e.key == pygame.K_y and self.is_game_over:
                     self.is_game_over = False
                     result = True
                 elif e.key == pygame.K_n and self.is_game_over:
                     self.is_game_over = False
                     result = False
-                elif e.key == pygame.K_ESCAPE and self.main_menu and self.main_menu.is_disabled():
-                    self.main_menu.enable()
+                elif e.key == pygame.K_ESCAPE and GAME_ENV.main_menu and GAME_ENV.main_menu.is_disabled():
+                    GAME_ENV.main_menu.enable()
             if e.type == pygame.QUIT:
                 sys.exit()
-        self.snake.set_direction(new_direction)
-        if self.main_menu:
-            self.main_menu.mainloop(events)
+        for player_idx in range(PLAYER_CFG.NUM_PLAYERS):
+            self.snakes[player_idx].set_direction(new_directions[player_idx])
+        if GAME_ENV.main_menu:
+            GAME_ENV.main_menu.mainloop(events)
         return result
 
     def __draw_game(self):
         GAME_ENV.surface.fill(self.background_color)
         for a in self.apples:
             a.draw()
-        self.snake.draw()
+        for s in self.snakes:
+            s.draw()
         self.__draw_score(self.score)
         self.__draw_time(pygame.time.get_ticks() - self.start_time)
         pygame.display.flip()
         pygame.display.update()
 
     def __update_objects(self):
-        if self.snake.collides_with_body():
+        dead_snakes = 0
+        for s in self.snakes:
+            s.update_alive()
+            if not s.is_alive():
+                dead_snakes = dead_snakes + 1
+        if dead_snakes == PLAYER_CFG.NUM_PLAYERS:
             self.is_game_over = True
             return
         for apple in self.apples:
-            if collides(apple, self.snake.get_head()):
-                self.snake.grow()
-                self.score += 5
-                self.apples.remove(apple)
-                break
-        self.snake.update()
+            for s in self.snakes:
+                if collides(apple, s.get_head()):
+                    s.grow()
+                    self.score += 5
+                    self.apples.remove(apple)
+                    break
+        for s in self.snakes:
+            if s.is_alive():
+                s.update()
         if len(self.apples) < GAME_CFG.NUM_APPLES:
             while not self.__insert_new_apple():
                 pass
@@ -196,20 +218,10 @@ class Game:
             self.__draw_game()
 
 
-def set_params(speed, players, controls):
-    assert 0 < speed < 10
-    assert 0 < players < 5
-    GAME_CFG.DELAY_FACTOR = 10 - speed
-    GAME_CFG.PLAYERS = players
-    GAME_CFG.CONTROLS = controls
-
-
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption("Snake v1.0")
     pygame.font.init()
-
-    CONTROLS = [PlayerControls()]
 
     GAME_ENV.clock = pygame.time.Clock()
     GAME_ENV.surface = pygame.display.set_mode((GAME_CFG.SCREEN_WIDTH, GAME_CFG.SCREEN_HEIGHT), pygame.HWSURFACE)

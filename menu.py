@@ -7,6 +7,8 @@ import pygameMenu
 import engine
 from config import GAME_CFG
 from config import GAME_ENV
+from config import PLAYER_CFG
+from config import PlayerControls
 
 # -----------------------------------------------------------------------------
 # Constants and global variables
@@ -29,11 +31,9 @@ SPEED = 6
 
 MAX_PLAYERS = 4
 
-main_menu = None
-
 player_controls = []
 for i in range(0, MAX_PLAYERS):
-    player_controls.append(engine.PlayerControls())
+    player_controls.append(PlayerControls())
 input_ctrl_sel_player = [player_controls[0]]
 
 
@@ -52,19 +52,20 @@ def play_function():
     Main game function.
     :return: None
     """
-    global main_menu
     global PLAYERS
     global SPEED
     print('Game starts for {0} players'.format(PLAYERS))
     # Reset main menu and disable
     # You also can set another menu, like a 'pause menu', or just use the same
     # main_menu as the menu that will check all your input.
-    main_menu.disable()
-    main_menu.reset(1)
-    engine.set_params(speed=SPEED, players=PLAYERS, controls=player_controls)
-    game_engine = engine.Game(menu=main_menu)
+    GAME_ENV.main_menu.disable()
+    GAME_ENV.main_menu.reset(1)
+    PLAYER_CFG.NUM_PLAYERS = PLAYERS
+    PLAYER_CFG.CONTROLS = player_controls
+    GAME_CFG.DELAY_FACTOR = 10 - SPEED
+    game_engine = engine.Game()
     game_engine.game_loop()  # doesn't return until game is over or close is requested
-    main_menu.enable()
+    GAME_ENV.main_menu.enable()
 
 
 def key_input(msg, on_key_pressed, *args, **kwargs):
@@ -72,7 +73,6 @@ def key_input(msg, on_key_pressed, *args, **kwargs):
     Draws an overlay, so that a input key can be retrieved
     :return: None
     """
-    global main_menu
     while True:
         GAME_ENV.clock.tick(FPS)
         main_background()
@@ -84,7 +84,7 @@ def key_input(msg, on_key_pressed, *args, **kwargs):
                 on_key_pressed(event.key, args, kwargs)
                 return
         # main_menu.mainloop(None, disable_loop=True)  # disable events in menu
-        main_menu._actual.draw()  # has to be used because mainloop flips internally
+        GAME_ENV.main_menu._actual.draw()  # has to be used because mainloop flips internally
         rect_size = (256, 48)
         frame_size = 6
         # inner frame
@@ -114,7 +114,7 @@ def store_key(key, *args, **kwargs):
 
 
 def ctrl_player_changed(value, sel_player):
-    input_ctrl_sel_player[0] = player_controls[sel_player]
+    input_ctrl_sel_player[0] = player_controls[sel_player - 1]
 
 
 def main_background():
@@ -148,8 +148,6 @@ def create_menu(menu_title, font_size=30):
 
 
 def main():
-    global main_menu
-
     pygame.init()
     pygame.display.set_caption("GC2 Snake v1.0")
     pygame.font.init()
@@ -193,13 +191,13 @@ def main():
     about_menu.add_line(pygameMenu.locals.TEXT_NEWLINE)
     about_menu.add_option('Return to main', pygameMenu.events.BACK)
 
-    main_menu = create_menu('Main')
-    main_menu.add_option('Start', play_function)
-    main_menu.add_option('Settings', setting_menu)
-    main_menu.add_option('About', about_menu)
-    main_menu.add_option('Quit', pygameMenu.events.EXIT)
+    GAME_ENV.main_menu = create_menu('Main')
+    GAME_ENV.main_menu.add_option('Start', play_function)
+    GAME_ENV.main_menu.add_option('Settings', setting_menu)
+    GAME_ENV.main_menu.add_option('About', about_menu)
+    GAME_ENV.main_menu.add_option('Quit', pygameMenu.events.EXIT)
 
-    main_menu.set_fps(FPS)
+    GAME_ENV.main_menu.set_fps(FPS)
 
     while True:
         GAME_ENV.clock.tick(FPS)
@@ -208,7 +206,7 @@ def main():
         for event in events:
             if event.type == pygame.QUIT:
                 exit()
-        main_menu.mainloop(events, disable_loop=True)
+        GAME_ENV.main_menu.mainloop(events, disable_loop=True)
         pygame.display.flip()
 
 
